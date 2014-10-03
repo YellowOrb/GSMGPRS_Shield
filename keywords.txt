@@ -1,0 +1,31 @@
+#######################################
+# Syntax Coloring Map For GSMGPRS_Shield
+#######################################
+
+#######################################
+# Datatypes/Classes (KEYWORD1)
+#######################################
+
+GSM	KEYWORD1
+GPRS	KEYWORD1
+GPRSClient	KEYWORD1
+IPAddress	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+status	KEYWORD2
+connect	KEYWORD2
+write	KEYWORD2
+available	KEYWORD2
+read	KEYWORD2
+peek	KEYWORD2
+flush	KEYWORD2
+stop	KEYWORD2
+connected	KEYWORD2
+begin	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
