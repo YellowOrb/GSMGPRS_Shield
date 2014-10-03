@@ -11,7 +11,7 @@ Though there currently exists a number of problems for this to really become a r
   * Seeed Studio libraries - Seeed Studio provides the following libraries
     * [GPRS_Shield_Suli](https://github.com/Seeed-Studio/GPRS_Shield_Suli)
     * [GPRSInterface](https://github.com/Seeed-Studio/GPRSInterface)
-    * [Xively GPRS][https://github.com/Seeed-Studio/Xively_GPRS] includes probably a copy of any of the other Seeed Studio libraries
+    * [Xively GPRS](https://github.com/Seeed-Studio/Xively_GPRS) includes probably a copy of any of the other Seeed Studio libraries
     * [Seeeduino GPRS](https://github.com/Seeed-Studio/Seeeduino_GPRS) is yet another version but for a slightly different chip, the SIM800 instead of the SIM900.
   
   * [GSM Shield Arduino](https://code.google.com/p/gsm-shield-arduino/) is the library with the official website http://www.gsmlib.org. The code has been migrated from google code to the GitHub repo [GSM-GPRS-GPS-Shield](https://github.com/MarcoMartines/GSM-GPRS-GPS-Shield). This library has also been copied into a four different GitHub repos(maybe people should learn to fork :) ):
