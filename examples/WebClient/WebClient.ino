@@ -1,50 +1,79 @@
 /*
-  Web client
- 
- This sketch connects to a website (http://www.google.com)
- using a GPRS shield. 
- 
- created 18 Dec 2014
+ GSM Web client
+
+ This sketch connects to a website using a GSM shield.
+
+ Circuit:
+ * GSM shield attached
+
+ created 20 October 2014
  by Karl-Petter Åkesson,
  based on work
- by David A. Mellis, Tom Igoe & Adrian McEwen 
+ by Tom Igoe
  */
 
-#include <GPRSClient.h>
-#include <GPRS.h>
-#include <GSM.h>
-char server[] = "www.google.com";    // name address for Google (using DNS)
+// libraries
+#include <SoftwareSerial.h>
+#include <SIM900.h>
 
-GPRSClient client;
+// PIN Number
+#define PINNUMBER ""
 
-void setup() {
-	// Open serial communications and wait for port to open:
+// APN data
+#define GPRS_APN       "online.telia.se" // replace your GPRS APN
+#define GPRS_LOGIN     ""                // replace with your GPRS login
+#define GPRS_PASSWORD  ""                // replace with your GPRS password
+
+// initialize the library instance
+SIM900GPRS gprs;
+SIM900Client client(&gprs);
+
+// This example downloads the URL "http://arduino.cc/"
+
+// URL, path & port (for example: arduino.cc)
+char server[] = "arduino.cc";
+char path[] = "/";
+int port = 80; // 80 for HTTP
+
+void setup()
+{
+  // initialize serial communications
   Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for Leonardo only
+  Serial.println("Starting Arduino web client.");
+  // connection state
+  boolean notConnected = true;
+
+  // Start GSM shield
+  gprs.turnOn();
+  // If your SIM has PIN, pass it as a parameter of begin() in quotes
+  while(notConnected)
+  {
+    if((gprs.begin()==GSM_READY) &
+        (gprs.attachGPRS(GPRS_APN, GPRS_LOGIN, GPRS_PASSWORD)==GPRS_READY))
+      notConnected = false;
+    else
+    {
+      Serial.println("Not connected");
+      delay(1000);
+    }
   }
 
-  // start the GSM shield
-  if (GSM.begin(9600) == 0) {
-    Serial.println("Failed to configure GSM");
-  }
-
-  // attach GPRS
-  if (GPRS.attach(9600) == 0) {
-    Serial.println("Failed to attach GPRS");
-  }
   Serial.println("connecting...");
 
   // if you get a connection, report back via serial:
-  if (client.connect(server, 80)) {
+  if (client.connect(server, port))
+  {
     Serial.println("connected");
     // Make a HTTP request:
-    client.println("GET /search?q=arduino HTTP/1.1");
-    client.println("Host: www.google.com");
-    client.println("Connection: close");
+    client.beginWrite();
+    client.print("GET ");
+    client.print(path);
+    client.println(" HTTP/1.0");
     client.println();
+    client.endWrite();
   } 
-  else {
+  else
+  {
     // if you didn't get a connection to the server:
     Serial.println("connection failed");
   }
@@ -54,20 +83,21 @@ void loop()
 {
   // if there are incoming bytes available 
   // from the server, read them and print them:
-  if (client.available()) {
+  if (client.available())
+  {
     char c = client.read();
     Serial.print(c);
   }
 
   // if the server's disconnected, stop the client:
-  if (!client.connected()) {
+  if (!client.available() && !client.connected())
+  {
     Serial.println();
     Serial.println("disconnecting.");
     client.stop();
 
-		GPRS.detach();
-		GSM.end();
     // do nothing forevermore:
-    while(true);
+    for(;;)
+      ;
   }
 }

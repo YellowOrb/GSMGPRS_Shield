@@ -9,12 +9,41 @@
 GSM	KEYWORD1
 GPRS	KEYWORD1
 GPRSClient	KEYWORD1
-IPAddress	KEYWORD1
+GPRSServer	KEYWORD1
+SIM900	KEYWORD1
+SIM900Client	KEYWORD1
+SIM900GPRS	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
+# GSM
+begin	KEYWORD2
+getNetworkStatus	KEYWORD2
+setBuffer	KEYWORD2
+send	KEYWORD2
+
+shutdown	KEYWORD2
+getIMEI	KEYWORD2
+getSIMStatus	KEYWORD2
+
+sendSMS	KEYWORD2
+readSMS	KEYWORD2
+deleteSMS	KEYWORD2
+callUp	KEYWORD2
+answer	KEYWORD2
+getPhoneNumber	KEYWORD2
+writePhoneNumber	KEYWORD2
+deletePhoneNumber	KEYWORD2
+
+# GPRS
+attachGPRS	KEYWORD2
+detachGPRS	KEYWORD2
+isGPRSAvailable	KEYWORD2
+getIP	KEYWORD2
+
+# GPRSClient
 status	KEYWORD2
 connect	KEYWORD2
 write	KEYWORD2
@@ -24,7 +53,8 @@ peek	KEYWORD2
 flush	KEYWORD2
 stop	KEYWORD2
 connected	KEYWORD2
-begin	KEYWORD2
+beginWrite	KEYWORD2
+endWrite	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

@@ -5,7 +5,11 @@
 class GPRS : public GSM {
 
 public:
-	int attach(char* domain, char* dom1, char* dom2);
-	int detach();
+	virtual NetworkStatus_t attachGPRS(const char * const domain, const char * const username=NULL, const char * const  password=NULL);
+	virtual void detachGPRS();
+	virtual bool isGPRSAvailable();
+		
+	virtual char* getIP(char* ip, int length)=0;
 };
+
 #endif
