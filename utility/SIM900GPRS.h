@@ -23,15 +23,11 @@ enum ConnectionStatus_t {
 // this hardware implements both GSM and GPRS functionality, thus inherits from GPRS
 class SIM900GPRS : public GPRS {
 protected:
-	int _rxPin;
-	int _txPin;
-	long _baudrate;
-	
 	ConnectionStatus_t parseConnectionStatus(char * str);
 	ConnectionStatus_t getConnectionStatus();
 	
 public:
-	SIM900GPRS(long baudrate=9600, int rxPin=7, int txPin=8);
+	SIM900GPRS(long baudrate=9600, int gprsBoardRXPin=7, int gprsBoardTXPin=8);
 
 	NetworkStatus_t begin(char* pin=NULL, bool restart=true);
 	

@@ -26,9 +26,8 @@ const char * const connectionStatusStrings[] PROGMEM =
 		pdp_deact 
 };
 
-SIM900GPRS::SIM900GPRS(long baudrate, int rxPin, int txPin) {
-	_baudrate = baudrate;
-	_cell = SoftwareSerial(rxPin, txPin);
+SIM900GPRS::SIM900GPRS(long baudrate, int gprsBoardRXPin, int gprsBoardTXPin) {
+	_cell = SoftwareSerial(gprsBoardRXPin, gprsBoardTXPin);
 	_cell.begin(baudrate);
 }
 
