@@ -1,9 +1,9 @@
 #ifndef gsm_h
 #define gsm_h
 #include <Arduino.h>
-#define GSM_LIB_VERSION F("v0.2")
+#define GSM_LIB_VERSION F("v0.3")
 
-#define DEBUG
+//#define DEBUG
 
 #define RESPONSE_BUFFER_SIZE 80 // enough to get modem response
 #define TIMEOUT 1000 //Default time out, 1 second
