@@ -26,9 +26,53 @@ const char * const connectionStatusStrings[] PROGMEM =
 		pdp_deact 
 };
 
-SIM900GPRS::SIM900GPRS(long baudrate, int gprsBoardRXPin, int gprsBoardTXPin) {
-	_cell = SoftwareSerial(gprsBoardRXPin, gprsBoardTXPin);
-	_cell.begin(baudrate);
+SIM900GPRS::SIM900GPRS():GPRS(){}
+SIM900GPRS::SIM900GPRS(Stream *serial):GPRS(serial){}
+#ifdef DEBUG
+SIM900GPRS::SIM900GPRS(Stream *serial, Stream *debug):GPRS(serial, debug){}
+#endif
+
+void powerOnCycle() {
+	pinMode(GSM_ON_PIN, OUTPUT); 
+	digitalWrite(GSM_ON_PIN,LOW);
+	delay(100);
+	digitalWrite(GSM_ON_PIN,HIGH);
+	delay(500); //2500 
+	digitalWrite(GSM_ON_PIN,LOW);
+	delay(100); // 3500
+}
+
+bool SIM900GPRS::turnOn(){
+	// check if already on, if so return true
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT"));
+#endif
+	_cell->println(F("AT"));
+	if(successfulResponse(100)){
+#ifdef DEBUG
+		_debug->println(F("Already on"));
+#endif
+		return true;
+	}
+	
+	powerOnCycle();
+	
+	// try to send AT and get OK back
+	int i = 0;
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT"));
+#endif
+	_cell->println(F("AT"));
+	while(!successfulResponse(250) && (i < 10)) {
+		i++;
+		_cell->println(F("AT"));
+	}
+	if(i == 10) { // did not get response after 10 AT commands, could not turn on
+		_status = ERROR;
+		return false;
+	}
+	_status = CONNECTING;
+	return true;
 }
 
 /**
@@ -51,28 +95,52 @@ char : 0 if asynchronous. If synchronous, returns status : ERROR, IDLE, CONNECTI
 // TODO - Implement not supported features
 NetworkStatus_t SIM900GPRS::begin(char* pin, bool restart)
 {
-	_cell.println(F("ATE0"));
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" ATE0"));
+#endif
+	_cell->println(F("ATE0"));
 	if(!successfulResponse()) {
 		return ERROR;
 	} 
 
-	_cell.println(F("ATV1"));
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" ATV1"));
+#endif
+	_cell->println(F("ATV1"));
 	if(!successfulResponse()) { //set verbose mode
 		return ERROR;
 	}	
 	
-	_cell.println(F("AT+IPR=0"));
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+IPR=0"));
+#endif
+	_cell->println(F("AT+IPR=0"));
 	if(!successfulResponse()) { //set autoBaud (default not really needed)
 		return ERROR;
 	}
-	
-	_cell.println(F("AT+CMEE=1"));
+
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CMEE=1"));
+#endif	
+	_cell->println(F("AT+CMEE=1"));
 	if(!successfulResponse()) { //set extended error report
 		// CMEE=0 just ERROR
 		// CMEE=1 just error number
 		// CMEE=2 full error
 		return ERROR;	
 	}
+	
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CREG=0"));
+#endif	
+	_cell->println(F("AT+CREG=0")); // no presentation of unsolicited result code +CREG
+	if(!successfulResponse()) { 
+		return ERROR;	
+	}
+//	_cell->println(F("AT+IFC=1,1"));
+//	if(!successfulResponse()) { //set software flow control
+//		return ERROR;	
+//	}
 	
 	return GSM_READY;
 }
@@ -84,7 +152,10 @@ NetworkStatus_t SIM900GPRS::begin(char* pin, bool restart)
  */
 char* SIM900GPRS::getIMEI(char* imei, int length)
 {
-	_cell.println(F("AT+GSN")); //RETURNS: 0000646714 OK
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+GSN"));
+#endif
+	_cell->println(F("AT+GSN")); //RETURNS: 0000646714 OK
 	if(!successfulResponse()) { // no response
 		return NULL;
 	}
@@ -96,7 +167,10 @@ char* SIM900GPRS::getIMEI(char* imei, int length)
 }
 
 bool SIM900GPRS::isGPRSAvailable() {
-	_cell.println(F("AT+CGATT?")); // check if GPRS is activated
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CGATT?"));
+#endif
+	_cell->println(F("AT+CGATT?")); // check if GPRS is activated
 	// RETURNS: +CGATT: 1  OK
 	if(!successfulResponse(3000)) { // no response
 		return NULL;
@@ -113,42 +187,69 @@ bool SIM900GPRS::isGPRSAvailable() {
 }
 
 NetworkStatus_t SIM900GPRS::attachGPRS(const char * const domain, const char * const username, const char * const password) {
-	// close down any left GPRS connections or similar for comming commands to work, brings chip back to state IP INITIAL
-	detachGPRS();
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CREG?"));
+#endif
+	_cell->println(F("AT+CREG?")); // check if registered in network
+	// RETURNS: +CREG: 1,x  OK
+	if(!successfulResponse()) { // no response
+		_status = ERROR;
+		return _status;
+	}
+	char* end = strstr_P(_buffer, PSTR("OK"));
+	end -=1;
+	end[0] = 0;
+	char* registered = strstr_P(_buffer, PSTR("+CREG: 0,"));
+	if(registered[9] !='1') {
+		_status = CONNECTING;
+		return _status;
+	}
 	
 	// we only want a single IP Connection at a time.
-	_cell.println(F("AT+CIPMUX=0"));
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CIPMUX=0"));
+#endif
+	_cell->println(F("AT+CIPMUX=0"));
 	if(!successfulResponse()) {
-		_status = GPRS_FAILED_SINGLE_CONNECT;
+		_status = CONNECTING;
 		return _status;
 	}
 
 	// we want non-transparent mode
-	_cell.println(F("AT+CIPMODE=0"));
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CIPMODE=0"));
+#endif
+	_cell->println(F("AT+CIPMODE=0"));
 	if(!successfulResponse()) {
-		_status = GPRS_NO_TRANSPARENT_MODE;
+		_status = CONNECTING;
 		return _status;
 	}
 	
 	// start GPRS task and set APN, username and password
-	_cell.print(F("AT+CSTT=\""));
-	_cell.print(domain);
-	_cell.print(F("\",\""));
-	if(NULL != username) _cell.print(username);
-	_cell.print(F("\",\""));
-	if(NULL != password) _cell.print(password);
-	_cell.println(F("\""));
-	if(!successfulResponse()) {
-		_status = GPRS_FAILED_START_GPRS; // we didnt get an OK back
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CSTT="));
+#endif
+	_cell->print(F("AT+CSTT=\""));
+	_cell->print(domain);
+	_cell->print(F("\",\""));
+	if(NULL != username) _cell->print(username);
+	_cell->print(F("\",\""));
+	if(NULL != password) _cell->print(password);
+	_cell->println(F("\""));
+	if(!successfulResponse(200)) {
+		_status = CONNECTING;
 		return _status;
 	}
 	
 	// chip is in state IP START
 	
 	// bring up wireless connection with GPRS or CSD
-	_cell.println(F("AT+CIICR"));
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CIICR"));
+#endif
+	_cell->println(F("AT+CIICR"));
 	if(!successfulResponse(5000)) {
-		_status = GPRS_FAILED_GPRS_CONNECT;
+		_status = CONNECTING;
 		return _status;
 	}
 	
@@ -158,26 +259,14 @@ NetworkStatus_t SIM900GPRS::attachGPRS(const char * const domain, const char * c
 }
 
 void SIM900GPRS::detachGPRS() {
-	_cell.println(F("AT+CIPSHUT")); // deactivate GPRS PDP context
-	if(!readAndCheckResponse(PSTR("SHUT OK"))) { // no response
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CIPSHUT"));
+#endif
+	_cell->println(F("AT+CIPSHUT")); // deactivate GPRS PDP context
+	if(!readAndCheckResponse(PSTR("SHUT OK"), 0)) { // no response
 		return;
 	}
 	_status = IDLE;
-}
-
-void SIM900GPRS::activateGPRS() {
-	_cell.println(F("AT+CGATT=1")); // activate GPRS Service
-	if(!successfulResponse()) {
-		return;
-	}
-	_status = GPRS_ACTIVE;
-}
-
-void SIM900GPRS::deactivateGPRS() {
-	_cell.println(F("AT+CGATT=0")); // deactivate GPRS Service
-	if(!successfulResponse()) {
-	}
-	_status = GPRS_DEACTIVATED;
 }
 
 /**
@@ -189,7 +278,10 @@ void SIM900GPRS::deactivateGPRS() {
  * 	99		not known or detectable
  */
 int SIM900GPRS::getSignalStrength(){
-	_cell.println(F("AT+CSQ")); 
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CSQ"));
+#endif
+	_cell->println(F("AT+CSQ")); 
 	//RETURNS: +CSQ: 7,0 OK
 	/*
 	 +CSQ: <rssi>, <ber>
@@ -217,68 +309,53 @@ int SIM900GPRS::getSignalStrength(){
 	return atoi(gprs);
 }
 
-void cyclePowerOnOff() {
-	pinMode(GSM_ON_PIN, OUTPUT); 
-	digitalWrite(GSM_ON_PIN,LOW);
-	delay(1000);
-	digitalWrite(GSM_ON_PIN,HIGH);
-	delay(2000); //2500 
-	digitalWrite(GSM_ON_PIN,LOW);
-	delay(3000); // 3500
-}
-
-bool SIM900GPRS::turnOn(){
-	// check if already on, if so return true
-	_cell.println(F("AT+CREG?"));
-	if(successfulResponse()){
-		return true;
-	}
-	
-	cyclePowerOnOff();
-	
-	// try to send AT and get OK back
-/*	int i = 0;
-	_cell.println(F("AT"));
-	while(!successfulResponse() && (i < 5)) {
-		delay(500);
-		i++;
-		_cell.println(F("AT"));
-	}
-	*/
-	
-	_cell.println(F("AT"));
-	// if we cannot talk to the modem, try to power cycle and talk again
-	if(!successfulResponse()) {
-		cyclePowerOnOff();
-		_cell.println(F("AT"));
-		// we cannot talk to the modem, something is really wrong
-		if(!successfulResponse()) {
-			_status = ERROR;
-			return false;
-		}
-	}
-	_status = CONNECTING;
-	return true;
-}
-
-
 /**
  * Disconnects from the GSM network identified on the SIM card by powering the modem off.
  * Syntax - gsm.shutdown()
  * Returns - boolean : true when successful
  */
 bool SIM900GPRS::shutdown(){
-	_cell.println(F("AT+CPOWD=1"));
-	if(readAndCheckResponse(PSTR("NORMAL POWER DOWN"))) {
-		_status = DEVICE_OFF;
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CPOWD=1"));
+#endif
+	_cell->println(F("AT+CPOWD=1"));
+	if(readAndCheckResponse(PSTR("NORMAL POWER DOWN"), -1, 500)) {
+		_status = OFF;
 		return true;
 	} else {
-		return false;
+		// force off
+#ifdef DEBUG
+		_debug->println(F("power on"));
+#endif
+		powerOnCycle();
+		
+#ifdef DEBUG
+		_debug->println(F("power off"));
+#endif
+		digitalWrite(GSM_ON_PIN,LOW);
+		delay(100);
+		digitalWrite(GSM_ON_PIN,HIGH);
+		delay(1500); //2500 
+		digitalWrite(GSM_ON_PIN,LOW);
+		delay(100); // 3500
+		
+#ifdef DEBUG
+			_debug->println(F("check off"));
+#endif
+		if(readAndCheckResponse(PSTR("NORMAL POWER DOWN"),-1, 500)) {
+			_status = OFF;
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
 ConnectionStatus_t SIM900GPRS::parseConnectionStatus(char * str)
 {
+#ifdef DEBUG
+	_debug->print(millis()); _debug->print(F(" Parse status: ")); _debug->print(str);
+#endif
 	int i = 0;
 	int max = sizeof(connectionStatusStrings)/sizeof(*connectionStatusStrings);
 	char * ptr = (char *) pgm_read_word (&connectionStatusStrings[i]);
@@ -291,8 +368,26 @@ ConnectionStatus_t SIM900GPRS::parseConnectionStatus(char * str)
 
 ConnectionStatus_t SIM900GPRS::getConnectionStatus()
 {
-	_cell.println(F("AT+CIPSTATUS")); 
-	if(!successfulResponse()) {
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CIPSTATUS"));
+#endif
+	_cell->println(F("AT+CIPSTATUS")); 
+	if(!readAndCheckResponse(PSTR("OK\r\n"),0)) { // check for the OK
+#ifdef DEBUG
+		_debug->print(millis()); _debug->println(F(" No OK response"));
+#endif		
+		return UNKNOWN_GSM_STATUS;
+	}
+		if(!readAndCheckResponse(PSTR("\r\n"),0)) { // read empty line
+	#ifdef DEBUG
+		_debug->print(millis()); _debug->println(F(" No empty line"));
+	#endif
+			return UNKNOWN_GSM_STATUS;
+		}
+	if(!readAndCheckResponse(PSTR("\r\n"),0)) { // read the STATE: line
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" No STATE"));
+#endif
 		return UNKNOWN_GSM_STATUS;
 	}
 	return parseConnectionStatus(_buffer);
@@ -300,11 +395,15 @@ ConnectionStatus_t SIM900GPRS::getConnectionStatus()
 
 char* SIM900GPRS::getIP(char* ip, int length)
 {
-	_cell.println(F("AT+CIFSR"));
-	readAndCheckResponse(PSTR("\r")); // just read all available bytes
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CIFSR"));
+#endif
+	_cell->println(F("AT+CIFSR"));
+	readAndCheckResponse(PSTR("\r\n"),0); // just skip the first \r\n
+  readAndCheckResponse(PSTR("\r\n"),0); // just read all available bytes
 	char* end = strchr(_buffer+2,'\r'); // skip ending \r\n
 	end[0] = 0;
-	strncpy(ip, _buffer+2, length); // the response we get starts with \r\n, skip those
+	strncpy(ip, _buffer, length);
 	return ip;
 }
 

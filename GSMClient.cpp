@@ -11,7 +11,7 @@ GSMClient::GSMClient(GPRS *gprs){
  */
 uint8_t GSMClient::connected()
 {
-	return _gprs->getNetworkStatus()==CONNECTED;	 
+	return _gprs->getNetworkStatus() == TRANSPARENT_CONNECTED;	 
 }
 
 /**
@@ -41,13 +41,6 @@ size_t GSMClient::write(const uint8_t *buf, size_t size) {
  */
 int GSMClient::available()
 {
-	// wait for reply
-//	long _startTime = millis();		
-//	while (_gprs->_cell->available() < 1){ 		    
-//		if( (millis() - _startTime) > 200) {
-//			 return 0; // timed out
-//		} 
-//	}
 	return _gprs->_cell->available();
 }
 
@@ -57,7 +50,7 @@ int GSMClient::internalRead(uint8_t *buf, size_t size, bool line) {
 	for(i=0;i<size-1;i++) { /// fill the buffer except the last position which we reserve to put a 0 in
 		// wait until we have something to read since read will return nonsens if data is not available
 		// or return if no data is available
-		endTime = millis() + 1000;
+		endTime = millis() + 100;
 		while(available()==0) {
 			if( millis() > endTime) {
 				buf[i]='\0'; // end the string

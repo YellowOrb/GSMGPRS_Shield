@@ -2,8 +2,18 @@
 
 This library is an attempt to create a unified library for all kinds of GSM/GPRS Shields that exists for the Arduino. The idea is not to implement support for all of them but rather define a small number of classes that implementations can inherit from and thus make it easy for a sketch developer to keep his/her sketch code but change the hardware. Preferably the sketch developer would even exchange the GSM/GPRS Shield for a Wifi or Ethernet based one.
 
-NB Seems there already exists a library like this http://arduino.cc/en/Reference/GSM but at the momenet I cannot find the source code. Probably the code is at https://github.com/arduino/Arduino/tree/master/libraries/GSM. Will see how easy that is to adapt to new hardware.
+## Smaller footprint
+There exists an official similar library http://arduino.cc/en/Reference/GSM but in my view it is over-designed. Take a look at the source code at https://github.com/arduino/Arduino/tree/master/libraries/GSM. Another issue with this is that it consumes a lot of both ROM and RAM. As an example looking at the WebClient example which is almost identical with the GsmWebClient it becomes quite obvious. Compiled for the Nano one gets the following:
 
+### WebClient(using this library)
+Sketch uses 9,778 bytes (31%) of program storage space. Maximum is 30,720 bytes.
+Global variables use 684 bytes (33%) of dynamic memory, leaving 1,364 bytes for local variables. Maximum is 2,048 bytes.
+
+### GsmWebClient(using the official library)
+Sketch uses 16,948 bytes (55%) of program storage space. Maximum is 30,720 bytes.
+Global variables use 1,053 bytes (51%) of dynamic memory, leaving 995 bytes for local variables. Maximum is 2,048 bytes.
+
+## Known issues
 Though there currently exists a number of problems for this to really become a reality:
  * WifiServer and EthernetServer are [not replaceble](https://groups.google.com/a/arduino.cc/forum/#!topic/developers/0tn0E5Uy_-A)
 

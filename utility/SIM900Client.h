@@ -1,6 +1,6 @@
 #ifndef sim900client_h
 #define sim900client_h
-#include "GPRSClient.h"
+#include "GSMClient.h"
 #include "SIM900GPRS.h"
 
 enum ClientState_t { 
@@ -11,7 +11,7 @@ enum ClientState_t {
 };
 
 
-class SIM900Client : public GPRSClient {
+class SIM900Client : public GSMClient {
 private:
 	void internalConnect1(void);
 	int internalConnect2(uint16_t port);

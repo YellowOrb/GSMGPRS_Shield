@@ -25,9 +25,13 @@ class SIM900GPRS : public GPRS {
 protected:
 	ConnectionStatus_t parseConnectionStatus(char * str);
 	ConnectionStatus_t getConnectionStatus();
-	
+
 public:
-	SIM900GPRS(long baudrate=9600, int gprsBoardRXPin=7, int gprsBoardTXPin=8);
+	SIM900GPRS();
+	SIM900GPRS(Stream* serial);
+#ifdef DEBUG
+	SIM900GPRS(Stream* serial, Stream* debug);
+#endif
 
 	NetworkStatus_t begin(char* pin=NULL, bool restart=true);
 	
@@ -42,10 +46,7 @@ public:
 	bool shutdown();
 	
 	int getSignalStrength();
-	
-	void activateGPRS();
-	void deactivateGPRS();
-	
+		
 	// Functions below not yet implemented
 	int getSIMStatus(void);
 
