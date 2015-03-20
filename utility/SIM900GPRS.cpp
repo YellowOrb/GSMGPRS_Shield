@@ -319,7 +319,7 @@ bool SIM900GPRS::shutdown(){
 	_debug->print(millis()); _debug->println(F(" AT+CPOWD=1"));
 #endif
 	_cell->println(F("AT+CPOWD=1"));
-	if(readAndCheckResponse(PSTR("NORMAL POWER DOWN"), -1, 500)) {
+	if(readAndCheckResponse(PSTR("NORMAL POWER DOWN"), -1, 1000)) {
 		_status = OFF;
 		return true;
 	} else {
