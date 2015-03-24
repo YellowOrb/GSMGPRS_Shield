@@ -1,5 +1,5 @@
-#ifndef gprsclient_h
-#define gprsclient_h
+#ifndef gprsserver_h
+#define gprsserver_h
 #include "Print.h"
 #include "Server.h"
 #include "IPAddress.h"
