@@ -90,7 +90,7 @@ void GSM::hexPrint(const char *str) {
  * Parameters: 
  * expected - PSTR expected response str
  * readBeyond - number of bytes to continue to read after 'expected' is found or -1 to read all available data(basically continue till timeout)
- * response timeout in ms
+ * response timeout in ms, returns if this time has passed since last received letter/character
  */
 bool GSM::readAndCheckResponse(const char* expected, int readBeyond, int timeout) {
 #ifdef DEBUG
@@ -105,48 +105,82 @@ bool GSM::readAndCheckResponse(const char* expected, int readBeyond, int timeout
 	}
 #endif
 	bool found = false;
+	char *foundAt = NULL;
 	long _endTime = millis()+timeout;		
 	_bufferIndex = 0;
   _buffer[_bufferIndex] = 0; // end the string at start
 
 	// keep reading while not timeout
 	while(millis() < _endTime) {
-		if(_bufferIndex == RESPONSE_BUFFER_SIZE-1 && readBeyond == -1) {
-			// filled the buffer AND read all available data, lets continue
+		if(_bufferIndex >= RESPONSE_BUFFER_SIZE-1){ //RESPONSE_BUFFER_SIZE-1) {
+			// filled the buffer
 			// first copy the same amount of data we are looking for to the beginning of buffer and then continue to fill up
 			// since we have not found what we look for but partial bits might be already read
+			
 			uint8_t expected_len = strlen_P(expected);
-			strlcpy(_buffer, &_buffer[_bufferIndex-expected_len], expected_len);
-			_bufferIndex = expected_len;
-			_buffer[_bufferIndex] = 0; // put a zero to indicate empty or last position in string
+#ifdef DEBUG
+			_debug->print(millis());
+			_debug->print(F(" Full("));
+			_debug->print(_bufferIndex);
+			_debug->print(F("):"));
+			_debug->println(_buffer);
+#endif
+			if(NULL!=foundAt) { // expected is already found so copy from start of expected so we will keep any data after as well
+				// copy from found to the end of buffer, place at begining
+				_bufferIndex = strlen(foundAt); // lengt of data from found to end of buffer
+				strlcpy(_buffer, foundAt, _bufferIndex); 
+				if(_bufferIndex > RESPONSE_BUFFER_SIZE/2) { // We need to use memmove since the two regions overlaps
+						memmove(_buffer, foundAt, _bufferIndex+1); // the length is one more to inlcude terminating 0
+					} else {
+						strcpy(_buffer, foundAt); // we alwasy 0 terminate strings so safe to use strcpy
+					}
+			} else { // else copy same amount as length of expected minus one since we might just be missing the last byte of expected
+				if(expected_len - 1 > RESPONSE_BUFFER_SIZE/2) { // We need to use memmove since the two regions overlaps
+						memmove(_buffer, &_buffer[_bufferIndex-(expected_len-1)], expected_len-1 +1); // the length is one more to inlcude terminating 0
+					} else {
+						strcpy(_buffer, &_buffer[_bufferIndex-(expected_len-1)]); // we alwasy 0 terminate strings so safe to use strcpy
+					}
+				_bufferIndex = expected_len-1;
+			}
+#ifdef DEBUG
+			_debug->print(millis());
+			_debug->print(F(" New:"));
+			hexPrint(_buffer);
+			_debug->println();
+#endif
 		}
 		
 		// check if new data available and if so store in buffer
 		if(_cell->available()>0) {
-			_buffer[_bufferIndex++] = _cell->read();
-			_buffer[_bufferIndex] = 0; // put a zero to indicate empty or last position in string
-			
+			_buffer[_bufferIndex] = _cell->read();
+			if(_buffer[_bufferIndex] != 0) {
+				_buffer[++_bufferIndex] = 0; // put a zero to terminate string
+			}
+			_endTime = millis()+timeout; // shift end time forward
 			// if not found before see if expected is in buffer
-			if(!found && (NULL != strstr_P(_buffer, expected))) {
-				// expected found
-				found = true;
+			if(!found) {
+				foundAt = strstr_P(_buffer, expected);
+				if (NULL != foundAt) {
+					// expected found
+					found = true;
 #ifdef DEBUG
-				_debug->print(millis());
-				_debug->print(F(" Found at "));
-				_debug->print(_bufferIndex);
-				_debug->print(F(": will "));
-				if(-1 == readBeyond) {
-					// read all available bytes
-					_debug->println(F("read all."));
-				} else if(0 == readBeyond) {
+					_debug->print(millis());
+					_debug->print(F(" Found at "));
+					_debug->print(_bufferIndex);
+					_debug->print(F(": will "));
+					if(-1 == readBeyond) {
+						// read all available bytes
+						_debug->println(F("read all."));
+					} else if(0 == readBeyond) {
 						_debug->println(F("read no more."));
-				} else {
-					// read readBeyond number or bytes
-					_debug->print(F("read "));
-					_debug->print(readBeyond);
-					_debug->println(F(" more bytes."));
-				}
+					} else {
+						// read readBeyond number or bytes
+						_debug->print(F("read "));
+						_debug->print(readBeyond);
+						_debug->println(F(" more bytes."));
+					}
 #endif
+				}
 			}
 			
 			// if found, decide if we should continue or not
@@ -183,7 +217,8 @@ bool GSM::readAndCheckResponse(const char* expected, int readBeyond, int timeout
 		_debug->println(F("'"));
 	}
 #endif
-//	Serial1.print('\'');Serial1.print(_buffer); Serial1.println('\'');
+	delay(5); // a slight delay without which communication will fail
+	//Serial1.print(millis());Serial1.print('\'');hexPrint(_buffer); Serial1.println('\'');
 	return found;
 }
 

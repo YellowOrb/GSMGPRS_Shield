@@ -5,8 +5,8 @@
 
 //#define DEBUG
 
-#define RESPONSE_BUFFER_SIZE 80 // enough to get modem response
-#define TIMEOUT 1000 //Default time out, 1 second
+#define RESPONSE_BUFFER_SIZE 48 // enough to get modem response
+#define TIMEOUT 400 //Default time out, 400 ms
 
 enum NetworkStatus_t { 
 	ERROR, IDLE, CONNECTING, GSM_READY, GPRS_READY, TRANSPARENT_CONNECTED, OFF
