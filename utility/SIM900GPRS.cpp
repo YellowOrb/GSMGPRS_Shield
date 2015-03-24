@@ -1,6 +1,5 @@
 #include "SIM900GPRS.h"
 
-
 const char ip_initial[] PROGMEM = "IP INITIAL";
 const char ip_start[] PROGMEM = "IP START";
 const char ip_config[] PROGMEM = "IP CONFIG";
@@ -205,6 +204,7 @@ NetworkStatus_t SIM900GPRS::attachGPRS(const char * const domain, const char * c
 		return _status;
 	}
 	
+	delay(15); // short delay needed for modem to detect next command
 	// we only want a single IP Connection at a time.
 #ifdef DEBUG
 	_debug->print(millis()); _debug->println(F(" AT+CIPMUX=0"));
@@ -236,7 +236,7 @@ NetworkStatus_t SIM900GPRS::attachGPRS(const char * const domain, const char * c
 	_cell->print(F("\",\""));
 	if(NULL != password) _cell->print(password);
 	_cell->println(F("\""));
-	if(!successfulResponse(200)) {
+	if(!successfulResponse()) {
 		_status = CONNECTING;
 		return _status;
 	}
@@ -248,7 +248,7 @@ NetworkStatus_t SIM900GPRS::attachGPRS(const char * const domain, const char * c
 	_debug->print(millis()); _debug->println(F(" AT+CIICR"));
 #endif
 	_cell->println(F("AT+CIICR"));
-	if(!successfulResponse(5000)) {
+	if(!successfulResponse(15000)) {
 		_status = CONNECTING;
 		return _status;
 	}
