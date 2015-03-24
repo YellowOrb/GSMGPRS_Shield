@@ -66,7 +66,7 @@ int SIM900Client::internalConnect2(uint16_t port) {
 	_gprs->_cell->print(F("\","));
 	_gprs->_cell->println(port,DEC);
 
-	if(!_gprs->readAndCheckResponse(PSTR("OK\r\n"),0)) {
+	if(!_gprs->readAndCheckResponse(PSTR("OK\r\n"),0,4000)) { // needs a little longer timeout
 		return false;
 	}
 	
@@ -83,6 +83,7 @@ int SIM900Client::internalConnect2(uint16_t port) {
 		}
 		return false;
 	}
+	delay(50); // a slight delay without which the status query will fail
 	_gprs->_status = _gprs->getConnectionStatus()==CONNECT_OK?TRANSPARENT_CONNECTED:IDLE;
 	_state = CLIENT_CONNECTED;
 	return true;
