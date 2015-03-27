@@ -42,6 +42,10 @@ public:
 	char* getIMEI(char* imei, int length);
 	char* getIP(char* ip, int length);
 	
+	bool activateDateTime();
+	bool deactivateDateTime();
+	char* getDateTime();
+	
 	bool turnOn();
 	bool shutdown();
 	

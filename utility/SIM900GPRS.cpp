@@ -407,6 +407,55 @@ char* SIM900GPRS::getIP(char* ip, int length)
 	return ip;
 }
 
+/**
+ * 
+ * Parameters - 
+ * Returns - 
+ */
+bool SIM900GPRS::activateDateTime()
+{
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CLTS=1"));
+#endif
+	_cell->println(F("AT+CLTS=1")); 
+	return successfulResponse();
+}
+
+/**
+ * 
+ * Parameters - 
+ * Returns - 
+ */
+bool SIM900GPRS::deactivateDateTime()
+{
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CLTS=0"));
+#endif
+	_cell->println(F("AT+CLTS=0")); 
+	return successfulResponse();
+}
+
+/**
+ * 
+ * Parameters - 
+ * Returns - 
+ */
+char* SIM900GPRS::getDateTime()
+{
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CCLK?"));
+#endif
+	_cell->println(F("AT+CCLK?")); // RETURNS: +CCLK: "15/03/26,17:25:28+04"
+	if(!successfulResponse()) { // no response
+		return NULL;
+	}
+	char* end = strstr_P(_buffer, PSTR("OK"));
+	end -=8; // end points att O in OK and is preceeded with two \r\n and a +zz"
+	end[0] = 0;
+	return &_buffer[10]; // start from character after first "
+}
+
+
 int SIM900GPRS::getSIMStatus(void) {return 0;}
 
 int SIM900GPRS::sendSMS(char* number, char* data) {return 0;}
