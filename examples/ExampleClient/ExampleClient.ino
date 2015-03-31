@@ -1,5 +1,6 @@
-#include <SoftwareSerial.h>
 #include <SIM900.h>
+
+#define debug Serial1
 
 SIM900GPRS gsm;
 SIM900Client client(&gsm);
@@ -13,65 +14,69 @@ char ipStr[17];
 char imeiStr[16];
 long _startTime;
 
-size_t freeRam ()
-  {
+size_t freeRam () {
   return RAMEND - size_t (__malloc_heap_start);
-  } // end of freeRam
+} // end of freeRam
   
 void setup(){
-  Serial.begin(9600);
-  Serial.println(F("Test of GSMGPRS_Shield"));
-  Serial.print(F("GSM lib "));
-  Serial.println(GSM_LIB_VERSION);
-  Serial.print(F("SIM900 lib "));
-  Serial.println(SIM900_GPRS_VERSION);
-  Serial.print(F("Free memory = "));
-  Serial.println(freeRam());
+  Serial.begin(57600);
+  debug.begin(115200);
+  debug.println(F("Test of GSMGPRS_Shield"));
+  debug.print(F("GSM lib "));
+  debug.println(GSM_LIB_VERSION);
+  debug.print(F("SIM900 lib "));
+  debug.println(SIM900_GPRS_VERSION);
+  debug.print(F("Free memory = "));
+  debug.println(freeRam());
   
   // try to turn on the GSM Shield, stop if we fail  
   if(!gsm.turnOn()) {
+    debug.println(F("Failed to turn on!"));
     goto STOP;
   }
-  Serial.println(F("Module on"));
+  debug.println(F("Module on"));
   
   // initialize GSM
-  while(gsm.begin() != GSM_READY) {
-    Serial.println("gsm setup problem");
-    goto STOP;
+  for(ret=0; ret<15 && GSM_READY != gsm.begin(); ret ++ ) {
+    debug.println("gsm setup problem");
+    delay(1000);
   }
-  Serial.println(F("GSM ready"));
+  debug.println(F("GSM ready"));
 
-  Serial.print(F("Signal strength: "));
-  Serial.println(gsm.getSignalStrength());
+  debug.print(F("Signal strength: "));
+  debug.println(gsm.getSignalStrength());
 
   gsm.getIMEI(imeiStr, 16);
-  Serial.print(F("IMEI: "));
-  Serial.println(imeiStr);
+  debug.print(F("IMEI: "));
+  debug.println(imeiStr);
   
   // wait until GPRS is available
-  while(!gsm.isGPRSAvailable()) {
-    delay(500);
+  for(ret=0; ret<15 && !gsm.isGPRSAvailable(); ret++) {
+    debug.println("no gprs yet");
+    delay(1000);
   }
-  Serial.println(F("GPRS is available, attach!"));
+  if(ret == 15) goto STOP;
+  debug.println(F("GPRS is available, attach!"));
   
-  while(GPRS_READY != gsm.attachGPRS("online.telia.se", NULL, NULL)) {
-      Serial.println("gprs join network error");
-      goto STOP;
+  for(ret=0; ret<15 && GPRS_READY != gsm.attachGPRS("online.telia.se", NULL, NULL); ret++) {
+      debug.println("gprs join network error");
+      delay(1000);
   }
-  Serial.println(F("GPRS ready"));
+  if(ret == 15) goto STOP;
+  debug.println(F("GPRS ready"));
   
   gsm.getIP(ipStr, 17);
-  Serial.print(F("IP Address is "));
-  Serial.println(ipStr);
+  debug.print(F("IP Address is "));
+  debug.println(ipStr);
   
-  if(false == client.connect("www.yelloworb.com", 3000)) {
-      Serial.println(F("connect error"));
+  if(false == client.connect("www.yelloworb.com", 80)) {
+      debug.println(F("connect error"));
       goto STOP;
   }
-  Serial.println(F("connect success"));
+  debug.println(F("connect success"));
   
 
-  Serial.println(F("waiting to fetch..."));
+  debug.println(F("waiting to fetch..."));
   client.beginWrite();
   client.print(http_cmd);
   client.endWrite();
@@ -90,17 +95,19 @@ void setup(){
     }     
   }
   buffer[ret] = '\0';
-  Serial.print(F("Recv: "));
-  Serial.print(ret);
-  Serial.println(F(" bytes: "));
-  Serial.println(buffer);
-  Serial.println(F("fetch over..."));
+  debug.print(F("Recv: "));
+  debug.print(ret);
+  debug.println(F(" bytes: "));
+  debug.println(buffer);
+  debug.println(F("fetch over..."));
   
   STOP:
   client.stop();
   gsm.detachGPRS(); 
   gsm.shutdown();
-  Serial.println(F("All Done!"));
+  debug.print(F("Free memory = "));
+  debug.println(freeRam());
+  debug.println(F("All Done!"));
 }
 
 void loop(){
