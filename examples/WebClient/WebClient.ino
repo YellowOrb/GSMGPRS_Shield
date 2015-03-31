@@ -16,6 +16,8 @@
 #include <SoftwareSerial.h>
 #include <SIM900.h>
 
+#define debug Serial1
+
 // PIN Number
 #define PINNUMBER ""
 
@@ -32,14 +34,15 @@ SIM900Client client(&gprs);
 
 // URL, path & port (for example: arduino.cc)
 char server[] = "arduino.cc";
-char path[] = "/";
+char path[] = "/asciilogo.txt";
 int port = 80; // 80 for HTTP
 
 void setup()
 {
   // initialize serial communications
-  Serial.begin(9600);
-  Serial.println("Starting Arduino web client.");
+  debug.begin(115200);
+  Serial.begin(57600); // must set the baudrate to the modem and initialize the serial port to the modem
+  debug.println("Starting Arduino web client.");
   // connection state
   boolean notConnected = true;
 
@@ -53,17 +56,17 @@ void setup()
       notConnected = false;
     else
     {
-      Serial.println("Not connected");
+      debugln("Not connected");
       delay(1000);
     }
   }
 
-  Serial.println("connecting...");
+  debugln("connecting...");
 
   // if you get a connection, report back via serial:
   if (client.connect(server, port))
   {
-    Serial.println("connected");
+    debugln("connected");
     // Make a HTTP request:
     client.beginWrite();
     client.print("GET ");
@@ -75,7 +78,7 @@ void setup()
   else
   {
     // if you didn't get a connection to the server:
-    Serial.println("connection failed");
+    debugln("connection failed");
   }
 }
 
@@ -86,14 +89,14 @@ void loop()
   if (client.available())
   {
     char c = client.read();
-    Serial.print(c);
+    debug(c);
   }
 
   // if the server's disconnected, stop the client:
   if (!client.available() && !client.connected())
   {
-    Serial.println();
-    Serial.println("disconnecting.");
+    debugln();
+    debugln("disconnecting.");
     client.stop();
 
     // do nothing forevermore:
