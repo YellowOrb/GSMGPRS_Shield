@@ -301,7 +301,7 @@ int SIM900GPRS::getSignalStrength(){
 
 	char* end = strstr_P(_buffer, PSTR("OK"));
 	if(NULL == end ) {
-		return false;
+		return 99;
 	}
 	end -=1;
 	end[0] = 0;
