@@ -13,6 +13,9 @@ Global variables use 684 bytes (33%) of dynamic memory, leaving 1,364 bytes for 
 Sketch uses 16,948 bytes (55%) of program storage space. Maximum is 30,720 bytes.
 Global variables use 1,053 bytes (51%) of dynamic memory, leaving 995 bytes for local variables. Maximum is 2,048 bytes.
 
+## Current Status
+ * 2015-03-31 - Tested some different libraries using HardwareSerial. Not 100% stable at 115 200 baud, misses data but at 57 600 baud all works fine. SoftwareSerial has not been tested.
+
 ## Known issues
 Though there currently exists a number of problems for this to really become a reality:
  * WifiServer and EthernetServer are [not replaceble](https://groups.google.com/a/arduino.cc/forum/#!topic/developers/0tn0E5Uy_-A)
