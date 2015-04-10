@@ -354,14 +354,24 @@ bool SIM900GPRS::shutdown(){
 ConnectionStatus_t SIM900GPRS::parseConnectionStatus(char * str)
 {
 #ifdef DEBUG
-	_debug->print(millis()); _debug->print(F(" Parse status: ")); _debug->print(str);
+	char outputStr[40];
+	_debug->print(millis()); _debug->print(F(" Parse status: ")); _debug->println(str);
 #endif
 	int i = 0;
 	int max = sizeof(connectionStatusStrings)/sizeof(*connectionStatusStrings);
-	char * ptr = (char *) pgm_read_word (&connectionStatusStrings[i]);
-	while( (NULL == strstr_P(str, ptr)) && (i<max) ) {
+#ifdef DEBUG
+	_debug->print(millis()); _debug->print(F(" max: ")); _debug->println(max);
+#endif
+#ifdef DEBUG
+	strcpy_P(outputStr, (char*)pgm_read_word(&(connectionStatusStrings[i])));
+	_debug->print(millis()); _debug->print(F(" check for: ")); _debug->println(outputStr);
+#endif	
+	while( (NULL == strstr_P(str, (char*)pgm_read_word(&(connectionStatusStrings[i])))) && (i<max) ) {
 		i++;
-		ptr = (char *) pgm_read_word (&connectionStatusStrings[i]);
+#ifdef DEBUG
+		strcpy_P(outputStr, (char*)pgm_read_word(&(connectionStatusStrings[i])));
+		_debug->print(millis()); _debug->print(F(" check for: ")); _debug->println(outputStr);
+#endif
 	}
 	return (ConnectionStatus_t)i;
 }
@@ -378,12 +388,12 @@ ConnectionStatus_t SIM900GPRS::getConnectionStatus()
 #endif		
 		return UNKNOWN_GSM_STATUS;
 	}
-		if(!readAndCheckResponse(PSTR("\r\n"),0)) { // read empty line
-	#ifdef DEBUG
+	if(!readAndCheckResponse(PSTR("\r\n"),0)) { // read empty line
+#ifdef DEBUG
 		_debug->print(millis()); _debug->println(F(" No empty line"));
-	#endif
+#endif
 			return UNKNOWN_GSM_STATUS;
-		}
+	}
 	if(!readAndCheckResponse(PSTR("\r\n"),0)) { // read the STATE: line
 #ifdef DEBUG
 	_debug->print(millis()); _debug->println(F(" No STATE"));
@@ -453,6 +463,77 @@ char* SIM900GPRS::getDateTime()
 	end -=8; // end points att O in OK and is preceeded with two \r\n and a +zz"
 	end[0] = 0;
 	return &_buffer[10]; // start from character after first "
+}
+
+/**
+ * 
+ * Parameters - 
+ * Returns - a string with current GMT time
+ */
+time_t SIM900GPRS::getDateTime2()
+{
+#ifdef DEBUG
+	_debug->print(millis()); _debug->println(F(" AT+CCLK?"));
+#endif
+	_cell->println(F("AT+CCLK?")); // RETURNS: +CCLK: "15/03/26,17:25:28+04"\r\n\r\nOK\r\n
+	if(!successfulResponse()) { // no response
+		return NULL;
+	}
+	_buffer += 10; // start from character after first "
+	char* end = strstr_P(_buffer, PSTR("OK"));
+	end -=5; // end points at O in OK and is preceeded with two \r\n and an "
+	end[0] = 0;
+	
+	Serial1.print(F("Got time: ")); Serial1.println(_buffer);
+	int year;
+  int month;
+  int day;
+  int hour;
+  int min;
+  int sec;
+	int tz;
+  
+  _buffer[2]=0;
+  year = atoi(_buffer);
+  _buffer += 3;
+  
+  _buffer[2]=0;
+  month = atoi(_buffer);
+  _buffer += 3;
+  
+  _buffer[2]=0;
+  day = atoi(_buffer);
+  _buffer += 3;
+  
+  _buffer[2]=0;
+  hour = atoi(_buffer);
+  _buffer += 3;
+  
+  _buffer[2]=0;
+  min = atoi(_buffer);
+  _buffer += 3;
+  
+
+
+	tz = atoi(&_buffer[3]); // parse including the + or - in the timezone
+	
+	end -=3; // remove the a +zz
+	end[0] = 0;
+  sec = atoi(_buffer);
+
+	tmElements_t tm;
+	
+	year += 30; // years since 1970  
+	tm.Year = year;
+	tm.Month = month;
+	tm.Day = day;
+	tm.Hour = hour;
+	tm.Minute = min;
+	tm.Second = sec;
+ 
+	// compensate for time zone so the result will be in GMT
+	// tz indicates the difference, expressed in quarters of an hour, between the loacl time and GMT; range -47 ... +48
+	return makeTime(tm) - (tz * 15 * 60); 
 }
 
 

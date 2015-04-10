@@ -1,6 +1,7 @@
 #ifndef sim900gprs_h
 #define sim900gprs_h
 #include "GPRS.h"
+#include <Time.h>
 
 #define SIM900_GPRS_VERSION F("v0.1")
 
@@ -45,6 +46,7 @@ public:
 	bool activateDateTime();
 	bool deactivateDateTime();
 	char* getDateTime();
+	time_t getDateTime2();
 	
 	bool turnOn();
 	bool shutdown();
