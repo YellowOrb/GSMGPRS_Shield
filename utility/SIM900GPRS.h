@@ -45,8 +45,8 @@ public:
 	
 	bool activateDateTime();
 	bool deactivateDateTime();
-	char* getDateTime();
-	time_t getDateTime2();
+	char* getTimeStr();
+	time_t getUnixTime();
 	
 	bool turnOn();
 	bool shutdown();

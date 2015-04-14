@@ -450,7 +450,7 @@ bool SIM900GPRS::deactivateDateTime()
  * Parameters - 
  * Returns - 
  */
-char* SIM900GPRS::getDateTime()
+char* SIM900GPRS::getTimeStr()
 {
 #ifdef DEBUG
 	_debug->print(millis()); _debug->println(F(" AT+CCLK?"));
@@ -469,9 +469,12 @@ char* SIM900GPRS::getDateTime()
  * 
  * Parameters - 
  * Returns - a string with current GMT time
+ * Got time: 00/01/01,00:00:36+08
+1999/12/31 22:00:36
  */
-time_t SIM900GPRS::getDateTime2()
+time_t SIM900GPRS::getUnixTime()
 {
+	char *localBufferPtr = _buffer; // create a local copy of the pointer since we will manipulate it
 #ifdef DEBUG
 	_debug->print(millis()); _debug->println(F(" AT+CCLK?"));
 #endif
@@ -479,12 +482,12 @@ time_t SIM900GPRS::getDateTime2()
 	if(!successfulResponse()) { // no response
 		return NULL;
 	}
-	_buffer += 10; // start from character after first "
-	char* end = strstr_P(_buffer, PSTR("OK"));
+	localBufferPtr += 10; // start from character after first "
+	char* end = strstr_P(localBufferPtr, PSTR("OK"));
 	end -=5; // end points at O in OK and is preceeded with two \r\n and an "
 	end[0] = 0;
 	
-	Serial1.print(F("Got time: ")); Serial1.println(_buffer);
+	Serial1.print(F("Got time: ")); Serial1.println(localBufferPtr);
 	int year;
   int month;
   int day;
@@ -493,35 +496,39 @@ time_t SIM900GPRS::getDateTime2()
   int sec;
 	int tz;
   
-  _buffer[2]=0;
-  year = atoi(_buffer);
-  _buffer += 3;
+  localBufferPtr[2]=0;
+  year = atoi(localBufferPtr);
+  localBufferPtr += 3;
   
-  _buffer[2]=0;
-  month = atoi(_buffer);
-  _buffer += 3;
+  localBufferPtr[2]=0;
+  month = atoi(localBufferPtr);
+  localBufferPtr += 3;
   
-  _buffer[2]=0;
-  day = atoi(_buffer);
-  _buffer += 3;
+  localBufferPtr[2]=0;
+  day = atoi(localBufferPtr);
+  localBufferPtr += 3;
   
-  _buffer[2]=0;
-  hour = atoi(_buffer);
-  _buffer += 3;
+  localBufferPtr[2]=0;
+  hour = atoi(localBufferPtr);
+  localBufferPtr += 3;
   
-  _buffer[2]=0;
-  min = atoi(_buffer);
-  _buffer += 3;
+  localBufferPtr[2]=0;
+  min = atoi(localBufferPtr);
+  localBufferPtr += 3;
   
-
-
-	tz = atoi(&_buffer[3]); // parse including the + or - in the timezone
+	tz = atoi(&localBufferPtr[3]); // parse including the + or - in the timezone
 	
 	end -=3; // remove the a +zz
 	end[0] = 0;
-  sec = atoi(_buffer);
+  sec = atoi(localBufferPtr);
 
 	tmElements_t tm;
+	
+	if(year<15) {
+		// When the modem has not synced it's time it reports the date as 00/01/01,00:00:00+zz plus the time that has passed since it started.
+		// This software was written in 2015 so we know that the year cannot be less than 15. If so return NULL to indicate invalid time.
+		return NULL;
+	}
 	
 	year += 30; // years since 1970  
 	tm.Year = year;
