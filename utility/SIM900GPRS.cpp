@@ -482,12 +482,12 @@ time_t SIM900GPRS::getUnixTime()
 	if(!successfulResponse()) { // no response
 		return NULL;
 	}
+	
 	localBufferPtr += 10; // start from character after first "
 	char* end = strstr_P(localBufferPtr, PSTR("OK"));
 	end -=5; // end points at O in OK and is preceeded with two \r\n and an "
 	end[0] = 0;
 	
-	Serial1.print(F("Got time: ")); Serial1.println(localBufferPtr);
 	int year;
   int month;
   int day;
