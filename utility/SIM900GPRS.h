@@ -52,6 +52,8 @@ public:
 	bool shutdown();
 	
 	int getSignalStrength();
+	
+	char* getSoftwareVersion();
 		
 	// Functions below not yet implemented
 	int getSIMStatus(void);

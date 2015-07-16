@@ -543,6 +543,20 @@ time_t SIM900GPRS::getUnixTime()
 	return makeTime(tm) - (tz * 15 * 60); 
 }
 
+char* SIM900GPRS::getSoftwareVersion() {
+	// 
+	#ifdef DEBUG
+		_debug->print(millis()); _debug->println(F(" AT+CGMR"));
+	#endif
+		_cell->println(F("AT+CGMR")); // Retrurns: Revision:1137B11SIM900M64_ST
+		if(!successfulResponse()) { // no response
+			return NULL;
+		}
+		char* end = strstr_P(_buffer, PSTR("OK"));
+		end -=4; // end points att O in OK and is preceeded with two times '\r\n'
+		end[0] = 0;
+		return &_buffer[11]; // start from first character after '\r\nRevision:'
+}
 
 int SIM900GPRS::getSIMStatus(void) {return 0;}
 
