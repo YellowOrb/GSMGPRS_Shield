@@ -10,10 +10,14 @@ Sketch uses 9,778 bytes (31%) of program storage space. Maximum is 30,720 bytes.
 Global variables use 684 bytes (33%) of dynamic memory, leaving 1,364 bytes for local variables. Maximum is 2,048 bytes.
 
 ### GsmWebClient(using the official library)
+Compiling the sketch generates the following memory usage report from the Arduino IDE as an indication of its memory print.
+```
 Sketch uses 16,948 bytes (55%) of program storage space. Maximum is 30,720 bytes.
 Global variables use 1,053 bytes (51%) of dynamic memory, leaving 995 bytes for local variables. Maximum is 2,048 bytes.
+```
 
 ## Current Status
+ * At the moment only implemented for the [SIM900](http://www.simcom.ee/modules/gsm-gprs/sim900/) module.
  * 2015-03-31 - Tested some different libraries using HardwareSerial. Not 100% stable at 115 200 baud, misses data but at 57 600 baud all works fine. SoftwareSerial has not been tested.
 
 ## Known issues
