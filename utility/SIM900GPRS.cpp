@@ -1,4 +1,5 @@
 #include "SIM900GPRS.h"
+#include <avr/wdt.h>
 
 const char ip_initial[] PROGMEM = "IP INITIAL";
 const char ip_start[] PROGMEM = "IP START";
@@ -35,10 +36,13 @@ void powerOnCycle() {
 	pinMode(GSM_ON_PIN, OUTPUT); 
 	digitalWrite(GSM_ON_PIN,LOW);
 	delay(100);
+	wdt_reset();
 	digitalWrite(GSM_ON_PIN,HIGH);
 	delay(500); //2500 
+	wdt_reset();
 	digitalWrite(GSM_ON_PIN,LOW);
 	delay(100); // 3500
+	wdt_reset();
 }
 
 bool SIM900GPRS::turnOn(){
@@ -334,11 +338,17 @@ bool SIM900GPRS::shutdown(){
 #endif
 		digitalWrite(GSM_ON_PIN,LOW);
 		delay(100);
+		wdt_reset();
 		digitalWrite(GSM_ON_PIN,HIGH);
-		delay(1500); //2500 
+		delay(500); //2500
+		wdt_reset();
+		delay(500);
+		wdt_reset();
+		delay(500); 
+		wdt_reset(); 
 		digitalWrite(GSM_ON_PIN,LOW);
 		delay(100); // 3500
-		
+		wdt_reset();
 #ifdef DEBUG
 			_debug->println(F("check off"));
 #endif
