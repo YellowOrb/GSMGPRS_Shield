@@ -1,5 +1,6 @@
 #include "GSM.h"
 #include <string.h>
+#include <avr/wdt.h>
 
 GSM::GSM(){
 	_cell = &Serial;
@@ -91,6 +92,7 @@ void GSM::hexPrint(const char *str) {
  * expected - PSTR expected response str
  * readBeyond - number of bytes to continue to read after 'expected' is found or -1 to read all available data(basically continue till timeout)
  * response timeout in ms, returns if this time has passed since last received letter/character
+ * Return true if expected is found otherwise false
  */
 bool GSM::readAndCheckResponse(const char* expected, int readBeyond, int timeout) {
 #ifdef DEBUG
@@ -112,6 +114,7 @@ bool GSM::readAndCheckResponse(const char* expected, int readBeyond, int timeout
 
 	// keep reading while not timeout
 	while(millis() < _endTime) {
+		wdt_reset();
 		if(_bufferIndex >= RESPONSE_BUFFER_SIZE-1){ //RESPONSE_BUFFER_SIZE-1) {
 			// filled the buffer
 			// first copy the same amount of data we are looking for to the beginning of buffer and then continue to fill up
