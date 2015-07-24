@@ -1,11 +1,11 @@
 #ifndef gsm_h
 #define gsm_h
 #include <Arduino.h>
-#define GSM_LIB_VERSION F("v0.3")
+#include "version.h"
 
 //#define DEBUG
 
-#define RESPONSE_BUFFER_SIZE 48 // enough to get modem response
+#define RESPONSE_BUFFER_SIZE 256 // enough to get modem response
 #define TIMEOUT 400 //Default time out, 400 ms
 
 enum NetworkStatus_t { 
