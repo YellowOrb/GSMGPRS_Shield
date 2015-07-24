@@ -75,6 +75,23 @@ bool SIM900GPRS::turnOn(){
 		return false;
 	}
 	_status = CONNECTING;
+	
+	#ifdef DEBUG
+		_debug->print(millis()); _debug->println(F(" ATE0"));
+	#endif
+		_cell->println(F("ATE0"));
+		if(!successfulResponse()) {
+			return false;
+		} 
+
+	#ifdef DEBUG
+		_debug->print(millis()); _debug->println(F(" ATV1"));
+	#endif
+		_cell->println(F("ATV1"));
+		if(!successfulResponse()) { //set verbose mode
+			return false;
+		}
+		
 	return true;
 }
 
@@ -97,23 +114,7 @@ char : 0 if asynchronous. If synchronous, returns status : ERROR, IDLE, CONNECTI
  */
 // TODO - Implement not supported features
 NetworkStatus_t SIM900GPRS::begin(char* pin, bool restart)
-{
-#ifdef DEBUG
-	_debug->print(millis()); _debug->println(F(" ATE0"));
-#endif
-	_cell->println(F("ATE0"));
-	if(!successfulResponse()) {
-		return ERROR;
-	} 
-
-#ifdef DEBUG
-	_debug->print(millis()); _debug->println(F(" ATV1"));
-#endif
-	_cell->println(F("ATV1"));
-	if(!successfulResponse()) { //set verbose mode
-		return ERROR;
-	}	
-	
+{	
 #ifdef DEBUG
 	_debug->print(millis()); _debug->println(F(" AT+IPR=0"));
 #endif
@@ -286,7 +287,7 @@ int SIM900GPRS::getSignalStrength(){
 	_debug->print(millis()); _debug->println(F(" AT+CSQ"));
 #endif
 	_cell->println(F("AT+CSQ")); 
-	//RETURNS: +CSQ: 7,0 OK
+	//RETURNS: +CSQ: 7,0
 	/*
 	 +CSQ: <rssi>, <ber>
 		<rssi>
@@ -307,9 +308,14 @@ int SIM900GPRS::getSignalStrength(){
 	if(NULL == end ) {
 		return 99;
 	}
-	end -=1;
+	end -=4; // end points att O in OK and is preceeded with two times '\r\n'
+	end -=2; // skip the <ber> part and the ',' .
 	end[0] = 0;
 	char* gprs = strchr(_buffer,':');
+	gprs +=1; // skip the blank space
+	#ifdef DEBUG
+		_debug->print(millis()); _debug->print(F("RSSI: "));_debug->println(gprs);
+	#endif
 	return atoi(gprs);
 }
 
