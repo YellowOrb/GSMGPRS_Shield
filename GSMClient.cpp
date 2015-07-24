@@ -1,5 +1,6 @@
 #include "GSMClient.h"
 #include "GPRS.h"
+#include <avr/wdt.h>
 
 GSMClient::GSMClient(GPRS *gprs){
 	_gprs = gprs;
@@ -52,6 +53,7 @@ int GSMClient::internalRead(uint8_t *buf, size_t size, bool line) {
 		// or return if no data is available
 		endTime = millis() + 100;
 		while(available()==0) {
+			wdt_reset();
 			if( millis() > endTime) {
 				buf[i]='\0'; // end the string
 				return i; // timed out
