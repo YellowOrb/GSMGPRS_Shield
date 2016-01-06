@@ -151,10 +151,8 @@ NetworkStatus_t SIM900GPRS::begin(char* pin, bool restart)
 
 /**
  * Obtain modem IMEI (command AT)
- * Parameters - imei string to put imei number into, length - length of imei string 
- * Returns - string with modem IMEI number or NULL is failed
+ * Returns - string with modem IMEI number or NULL if failed
  * The IMEI string is on the format "AABBBBBBCCCCCCEE" and always 16 characters long.
- TODO - remove the use of length if not in Arduino API
  */
 char* SIM900GPRS::getIMEI()
 {
