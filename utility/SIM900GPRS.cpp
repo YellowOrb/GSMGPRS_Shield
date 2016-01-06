@@ -153,8 +153,10 @@ NetworkStatus_t SIM900GPRS::begin(char* pin, bool restart)
  * Obtain modem IMEI (command AT)
  * Parameters - imei string to put imei number into, length - length of imei string 
  * Returns - string with modem IMEI number or NULL is failed
+ * The IMEI string is on the format "AABBBBBBCCCCCCEE" and always 16 characters long.
+ TODO - remove the use of length if not in Arduino API
  */
-char* SIM900GPRS::getIMEI(char* imei, int length)
+char* SIM900GPRS::getIMEI()
 {
 #ifdef DEBUG
 	_debug->print(millis()); _debug->println(F(" AT+GSN"));
@@ -164,10 +166,9 @@ char* SIM900GPRS::getIMEI(char* imei, int length)
 		return NULL;
 	}
 	char* end = strstr_P(_buffer, PSTR("OK"));
-	end -=3; // end points att O in OK and is preceeded with \r\n
+	end -=4; // end points att O in OK and is preceeded with \r\n
 	end[0] = 0;
-	strncpy(imei, _buffer+2, length); // the response we get starts with \r\n, skip those
-	return imei; 
+	return _buffer+2; 
 }
 
 bool SIM900GPRS::isGPRSAvailable() {
@@ -312,9 +313,9 @@ int SIM900GPRS::getSignalStrength(){
 	end -=2; // skip the <ber> part and the ',' .
 	end[0] = 0;
 	char* gprs = strchr(_buffer,':');
-	gprs +=1; // skip the blank space
+	gprs +=2; // skip the blank space
 	#ifdef DEBUG
-		_debug->print(millis()); _debug->print(F("RSSI: "));_debug->println(gprs);
+		_debug->print(millis()); _debug->print(F(" RSSI: "));_debug->println(gprs);
 	#endif
 	return atoi(gprs);
 }

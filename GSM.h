@@ -43,7 +43,7 @@ public:
 	void send(char *buffer);
 	
 	virtual bool shutdown()=0;
-	virtual char* getIMEI(char* imei, int length)=0;
+	virtual char* getIMEI()=0;
   virtual int getSIMStatus(void)=0;
 
   virtual int sendSMS(char* number, char* data)=0;

@@ -40,7 +40,7 @@ public:
 	NetworkStatus_t attachGPRS(const char * const domain, const char * const username=NULL, const char * const  password=NULL);
 	void detachGPRS();
 
-	char* getIMEI(char* imei, int length);
+	char* getIMEI();
 	char* getIP(char* ip, int length);
 	
 	bool activateDateTime();
