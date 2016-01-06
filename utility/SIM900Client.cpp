@@ -142,6 +142,9 @@ void SIM900Client::stop()
 		// if not already closed will response with CLOSE OK but if closed +CME ERROR: 3 CLOSED, thus just look for ´CLOSE
 		// if we do not find CLOSE just return
 		if(!_gprs->readAndCheckResponse(PSTR("CLOSE"), -1, 1500)) {
+#ifdef DEBUG
+			_gprs->_debug->println(F("SIM900Client::stop() did not find CLOSE!"));
+#endif
 			return;
 		}
 		_state = DISCONNECTED;
