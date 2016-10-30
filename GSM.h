@@ -14,22 +14,6 @@ enum NetworkStatus_t {
 
 class GSM {
 
-protected:
-	Stream* _cell; // a Stream to the GSM unit, for instance a HardwareSerial or SoftwareSerial
-#ifdef DEBUG
-	Stream* _debug = 0; // a possible output stream
-#endif
-	char _internalBuffer[RESPONSE_BUFFER_SIZE];
-	char* _buffer = _internalBuffer;
-	int _bufferIndex = 0;
-	int _bufferSize  = RESPONSE_BUFFER_SIZE;
-	NetworkStatus_t _status = CONNECTING;
-
-	bool readAndCheckResponse(const char* expected, int readBeyond=-1, int timeout=TIMEOUT);
-	bool successfulResponse(int timeout=TIMEOUT);
-	void print_P(const char* str);
-	void hexPrint(const char* str);
-	
 public:
 	GSM();
 	GSM(Stream* serial);
@@ -55,9 +39,28 @@ public:
 	virtual char getPhoneNumber(byte position, char* phone_number)=0;
 	virtual char writePhoneNumber(byte position, char* phone_number)=0;
 	virtual char deletePhoneNumber(byte position)=0;
+#ifdef DEBUG
+	char* setDebugSerial(Stream* debug);
+#endif
 	
 	friend class GSMClient;
 	friend class SIM900Client;
+
+protected:
+	Stream* _cell; // a Stream to the GSM unit, for instance a HardwareSerial or SoftwareSerial
+#ifdef DEBUG
+	Stream* _debug = 0; // a possible output stream
+#endif
+	char _internalBuffer[RESPONSE_BUFFER_SIZE];
+	char* _buffer = _internalBuffer;
+	int _bufferIndex = 0;
+	int _bufferSize  = RESPONSE_BUFFER_SIZE;
+	NetworkStatus_t _status = CONNECTING;
+
+	bool readAndCheckResponse(const char* expected, int readBeyond=-1, int timeout=TIMEOUT);
+	bool successfulResponse(int timeout=TIMEOUT);
+	void print_P(const char* str);
+	void hexPrint(const char* str);
 };
 
 #endif

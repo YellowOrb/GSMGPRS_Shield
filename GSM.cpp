@@ -28,6 +28,12 @@ void GSM::setBuffer(char * buffer, int size) {
 	_bufferSize = size;
 }
 
+#ifdef DEBUG
+char *GSM::setDebugSerial(Stream* debug){
+	_debug = debug;
+}
+#endif
+
 void GSM::send(char * str) {
 	_cell->println(str);
 }
